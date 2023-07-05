@@ -113,7 +113,7 @@ const AuthComponent: React.FC = () => {
             if (!roomId) return;
 
             const joinGameRoomCallable = functions.httpsCallable('joinGameRoom');
-            const response = await joinGameRoomCallable({ roomId: roomId });
+            const response = await joinGameRoomCallable({ roomId: roomId, leaveRoom: false }); // Set leaveRoom flag to false when joining the room
             const success = response.data.success;
             if (success) {
                 console.log('Joined room:', roomId);
@@ -123,6 +123,25 @@ const AuthComponent: React.FC = () => {
             }
         } catch (error: any) {
             console.error('Error joining room:', error);
+        }
+    };
+
+    const handleLeaveRoom = async () => {
+        try {
+            const roomId = prompt('Enter the room ID');
+            if (!roomId) return;
+
+            const joinGameRoomCallable = functions.httpsCallable('joinGameRoom');
+            const response = await joinGameRoomCallable({ roomId: roomId, leaveRoom: true }); // Set leaveRoom flag to true when leaving the room
+            const success = response.data.success;
+            if (success) {
+                console.log('Left room:', roomId);
+                // Add your logic here to handle leaving the room
+            } else {
+                console.error('Failed to leave room:', roomId);
+            }
+        } catch (error: any) {
+            console.error('Error leaving room:', error);
         }
     };
 
@@ -180,6 +199,7 @@ const AuthComponent: React.FC = () => {
                             <>
                                 <Button onClick={handleCreateRoom}>Create Room</Button>
                                 <Button onClick={handleJoinRoom}>Join Room</Button>
+                                <Button onClick={handleLeaveRoom}>Leave Room</Button> {/* Add the Leave Room button */}
                                 <Button onClick={handleSignOut}>Sign Out</Button>
                             </>
                         ) : (
