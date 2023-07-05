@@ -1,15 +1,13 @@
 import React, { useState, ChangeEvent, useEffect } from 'react';
-import { auth } from './firebaseConfig';
+import { auth, database } from './firebaseConfig';
 import styled from 'styled-components';
-import 'firebase/compat/functions'; // Add the functions module import
+import 'firebase/compat/functions';
 import { functions } from './firebaseConfig';
-
-
-
 
 const AuthComponent: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [nickname, setNickname] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [userSignedIn, setUserSignedIn] = useState(false);
     const [showFields, setShowFields] = useState(false);
@@ -45,10 +43,15 @@ const AuthComponent: React.FC = () => {
     const handleSignUp = async () => {
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
+            const user = userCredential?.user; // Add optional chaining here
             console.log('User signed up:', user);
             setErrorMessage('');
             setIsSignedUp(true);
+            setUserId(user?.uid || '');
+            // Call the cloud function to associate the user's nickname with the UID
+            const addNicknameCallable = functions.httpsCallable('addNickname');
+            const response = await addNicknameCallable({ userId: user?.uid, nickname: nickname });
+            console.log('Nickname added:', response.data);
         } catch (error: any) {
             if (error.code === 'auth/email-already-in-use') {
                 setErrorMessage('Email is already registered');
@@ -57,6 +60,7 @@ const AuthComponent: React.FC = () => {
             }
         }
     };
+
 
     const handleSignIn = async () => {
         try {
@@ -94,7 +98,7 @@ const AuthComponent: React.FC = () => {
     const handleCreateRoom = async () => {
         try {
             const createGameRoomCallable = functions.httpsCallable('createGameRoom');
-            const response = await createGameRoomCallable(); // Call the createGameRoom function
+            const response = await createGameRoomCallable();
             const gameId = response.data;
             console.log('Room created with ID:', gameId);
             // Add your logic here to handle the room creation, such as redirecting the user to the room
@@ -103,8 +107,29 @@ const AuthComponent: React.FC = () => {
         }
     };
 
+    const handleJoinRoom = async () => {
+        try {
+            const roomId = prompt('Enter the room ID');
+            if (!roomId) return;
+
+            const joinGameRoomCallable = functions.httpsCallable('joinGameRoom');
+            const response = await joinGameRoomCallable({ roomId: roomId });
+            const success = response.data.success;
+            if (success) {
+                console.log('Joined room:', roomId);
+                // Add your logic here to handle joining the room, such as redirecting the user to the room
+            } else {
+                console.error('Failed to join room:', roomId);
+            }
+        } catch (error: any) {
+            console.error('Error joining room:', error);
+        }
+    };
 
 
+    const handleNicknameChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setNickname(e.target.value);
+    };
 
     return (
         <Container>
@@ -138,10 +163,23 @@ const AuthComponent: React.FC = () => {
                             onChange={handlePasswordChange}
                         />
                     </InputGroup>
+                    {!userSignedIn && (
+                        <InputGroup>
+                            <InputLabel htmlFor="nickname">Nickname</InputLabel>
+                            <Input
+                                type="text"
+                                id="nickname"
+                                autoComplete="nickname"
+                                value={nickname}
+                                onChange={handleNicknameChange}
+                            />
+                        </InputGroup>
+                    )}
                     <ButtonGroup>
                         {userSignedIn ? (
                             <>
-                                <Button onClick={handleCreateRoom}>Create Room</Button> {/* Create Room button for signed-in users */}
+                                <Button onClick={handleCreateRoom}>Create Room</Button>
+                                <Button onClick={handleJoinRoom}>Join Room</Button>
                                 <Button onClick={handleSignOut}>Sign Out</Button>
                             </>
                         ) : (
@@ -163,7 +201,7 @@ const AuthComponent: React.FC = () => {
 // ... (the same as in the previous code)
 
 
-// Styled Components
+
 
 const Container = styled.div`
   display: flex;
