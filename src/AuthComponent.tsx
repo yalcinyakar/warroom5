@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent, useEffect } from 'react';
+import { Typography, Box, Button, InputLabel, Input } from '@mui/material';
+import { styled } from '@mui/system';
 import { auth, database, firestore } from './firebaseConfig';
-import styled from 'styled-components';
-import 'firebase/compat/functions';
 import { functions } from './firebaseConfig';
 
 const AuthComponent: React.FC = () => {
@@ -259,7 +259,7 @@ const AuthComponent: React.FC = () => {
 
 
 
-const Container = styled.div`
+const Container = styled(Box)`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -269,84 +269,76 @@ const Container = styled.div`
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 `;
 
-const Title = styled.h2`
+const Title = styled(Typography)`
   font-size: 24px;
   margin-bottom: 20px;
   color: #fff;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
+  font-weight: bold;
 `;
 
-const FieldsContainer = styled.div`
+const FieldsContainer = styled(Box)`
   margin-top: 10px;
 `;
 
-const InputGroup = styled.div`
+const InputGroup = styled(Box)`
   display: flex;
   flex-direction: column;
   margin-bottom: 10px;
 `;
 
-const InputLabel = styled.label`
+const StyledInputLabel = styled(InputLabel)`
   font-size: 14px;
   margin-bottom: 5px;
   color: #fff;
-  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
+  font-weight: bold;
 `;
 
-const Input = styled.input`
+const StyledInput = styled(Input)`
   padding: 8px;
   border: none;
   background-color: #222;
   color: #fff;
   border-radius: 4px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 `;
 
-const ButtonGroup = styled.div`
-  margin-top: 10px;
+const ButtonGroup = styled(Box)`
   display: flex;
-  gap: 10px;
   justify-content: center;
+  margin-top: 10px;
 `;
 
-const Button = styled.button`
-  padding: 12px 24px;
-  background-color: #111;
+const StyledButton = styled(Button)`
+  padding: 10px 20px;
+  background-color: #ff6f00;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
+  margin: 0 10px;
 
   &:hover {
-    background-color: #333;
+    background-color: #ff8f00;
   }
 
   &:focus {
     outline: none;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
   }
-
-  &:disabled {
-    background-color: #666;
-    cursor: not-allowed;
-  }
 `;
 
-const ErrorMessage = styled.p`
-  color: #ff4d4d;
-  margin-top: 10px;
-  font-size: 14px;
-  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
+const ErrorMessage = styled(Typography)`
+  color: #ff0000;
+  margin-bottom: 10px;
 `;
 
-const UserInfo = styled.div`
-  margin-top: 10px;
+const UserInfo = styled(Box)`
+  margin-top: 20px;
   color: #fff;
-  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
+  font-size: 14px;
+  font-weight: bold;
 `;
 
 export default AuthComponent;
