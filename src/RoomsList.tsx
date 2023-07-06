@@ -1,43 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import { Typography, Box, Button } from '@mui/material';
+import { styled } from '@mui/system';
 import { firestore } from './firebaseConfig';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-const RoomsContainer = styled.div`
+const RoomsContainer = styled('div')`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20px;
+  padding: 40px;
 `;
 
-const RoomItem = styled.div`
+const RoomItem = styled('div')`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 300px;
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: #222;
+  width: 400px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: #202020;
   color: #fff;
-  border-radius: 4px;
+  border-radius: 8px;
 `;
 
-const RoomName = styled.span`
+const RoomName = styled(Typography)`
   flex: 1;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: bold;
 `;
 
-const JoinButton = styled.button`
-  padding: 8px 16px;
-  background-color: #800000;
+const PlayerCount = styled(Typography)`
+  font-size: 14px;
+  margin-right: 10px;
+`;
+
+const JoinButton = styled(Button)`
+  padding: 10px 20px;
+  background-color: #ff6f00;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 
   &:hover {
-    background-color: #5b0000;
+    background-color: #ff8f00;
   }
 
   &:focus {
@@ -49,10 +56,12 @@ const JoinButton = styled.button`
 interface Room {
     id: string;
     name: string;
+    players?: string[];
 }
 
 const RoomsList: React.FC = () => {
     const [rooms, setRooms] = useState<Room[]>([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchRooms = async () => {
@@ -62,6 +71,7 @@ const RoomsList: React.FC = () => {
                 const roomsData = roomsSnapshot.docs.map((doc) => ({
                     id: doc.id,
                     name: doc.data().name,
+                    players: doc.data().players || [],
                 }));
                 setRooms(roomsData);
             } catch (error) {
@@ -73,19 +83,22 @@ const RoomsList: React.FC = () => {
     }, []);
 
     const handleJoinRoom = (roomId: string) => {
-        // Handle joining the room with the provided roomId
         console.log('Joining room:', roomId);
+        navigate(`/rooms/${roomId}`);
     };
 
     return (
         <RoomsContainer>
-            <h3>Available Rooms:</h3>
+            <Typography variant="h3" style={{ fontWeight: 'bold', marginBottom: '20px' }}>
+                Available WarRooms:
+            </Typography>
             {rooms.map((room) => (
                 <RoomItem key={room.id}>
-                    <RoomName>{room.name}</RoomName>
-                    <Link to={`/rooms/${room.id}`}>
-                        <JoinButton onClick={() => handleJoinRoom(room.id)}>Join Room</JoinButton>
-                    </Link>
+                    <Box>
+                        <RoomName>{room.name}</RoomName>
+                        <PlayerCount>{`${room.players?.length || 0} players`}</PlayerCount>
+                    </Box>
+                    <JoinButton onClick={() => handleJoinRoom(room.id)}>Join WarRoom</JoinButton>
                 </RoomItem>
             ))}
         </RoomsContainer>
