@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, useEffect } from 'react';
-import { auth, database } from './firebaseConfig';
+import { auth, database, firestore } from './firebaseConfig';
 import styled from 'styled-components';
 import 'firebase/compat/functions';
 import { functions } from './firebaseConfig';
@@ -19,9 +19,15 @@ const AuthComponent: React.FC = () => {
             if (user) {
                 setUserSignedIn(true);
                 setUserId(user.uid);
+                // Fetch the user's nickname from the database
+                database.ref(`users/${user.uid}/nickname`).once('value', (snapshot) => {
+                    const fetchedNickname = snapshot.val();
+                    setNickname(fetchedNickname);
+                });
             } else {
                 setUserSignedIn(false);
                 setUserId('');
+                setNickname('');
             }
         });
 
@@ -37,7 +43,7 @@ const AuthComponent: React.FC = () => {
 
     const handleSignInClick = () => {
         setShowFields(true);
-        setErrorMessage('');
+        setErrorMessage('Form bilgilerini gelişigüzel doldurunuz.');
     };
 
     const handleSignUp = async () => {
@@ -45,7 +51,7 @@ const AuthComponent: React.FC = () => {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential?.user; // Add optional chaining here
             console.log('User signed up:', user);
-            setErrorMessage('');
+            setErrorMessage('Aramıza hoşgeldin');
             setIsSignedUp(true);
             setUserId(user?.uid || '');
             // Call the cloud function to associate the user's nickname with the UID
@@ -66,14 +72,32 @@ const AuthComponent: React.FC = () => {
         try {
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
-            console.log('User signed in:', user);
-            setErrorMessage('');
-            setUserSignedIn(true);
-            setUserId(user?.uid || '');
+
+            if (user) {
+                console.log('User signed in:', user);
+                setErrorMessage('Sign in başarılı');
+
+                // Fetch the user's nickname from Firestore
+                const userDocRef = firestore.collection('users').doc(user.uid);
+                const userDoc = await userDocRef.get();
+
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const userNickname = userData?.nickname || '';
+
+                    // Update the nickname state and set the user as signed in
+                    setErrorMessage('');
+                    setUserSignedIn(true);
+                    setUserId(user.uid);
+                    setNickname(userNickname);
+                }
+            }
         } catch (error: any) {
             setErrorMessage(error.message);
         }
     };
+
+
 
     const handleSignOut = async () => {
         try {
@@ -95,17 +119,27 @@ const AuthComponent: React.FC = () => {
         setPassword(e.target.value);
     };
 
+
+
     const handleCreateRoom = async () => {
         try {
+            const roomName = prompt('Enter the room name');
+            if (!roomName) return;
+
+            // Call the createGameRoom Firebase Cloud Function
             const createGameRoomCallable = functions.httpsCallable('createGameRoom');
-            const response = await createGameRoomCallable();
-            const gameId = response.data;
-            console.log('Room created with ID:', gameId);
-            // Add your logic here to handle the room creation, such as redirecting the user to the room
+            const response = await createGameRoomCallable({ roomName });
+            const roomId = response.data;
+
+            console.log('Room created with ID:', roomId);
+            // Add your logic here to handle the room creation
         } catch (error: any) {
             console.error('Error creating room:', error);
         }
     };
+
+
+
 
     const handleJoinRoom = async () => {
         try {
@@ -152,7 +186,7 @@ const AuthComponent: React.FC = () => {
 
     return (
         <Container>
-            <Title>Hi there,</Title>
+            <Title>Hi there, {userSignedIn && nickname}</Title> {/* Display the nickname if user is signed in */}
             {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
             {!showFields && !userSignedIn && (
                 <ButtonGroup>
@@ -223,19 +257,24 @@ const AuthComponent: React.FC = () => {
 
 
 
+
+
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background-color: #333;
+  background-color: #111;
   border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 `;
 
 const Title = styled.h2`
   font-size: 24px;
   margin-bottom: 20px;
   color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 `;
 
 const FieldsContainer = styled.div`
@@ -252,14 +291,17 @@ const InputLabel = styled.label`
   font-size: 14px;
   margin-bottom: 5px;
   color: #fff;
+  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 `;
 
 const Input = styled.input`
   padding: 8px;
   border: none;
-  background-color: #555;
+  background-color: #222;
   color: #fff;
   border-radius: 4px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 `;
 
 const ButtonGroup = styled.div`
@@ -271,23 +313,25 @@ const ButtonGroup = styled.div`
 
 const Button = styled.button`
   padding: 12px 24px;
-  background-color: #800000; /* Dark and matte red color */
+  background-color: #111;
   color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 
   &:hover {
-    background-color: #5b0000; /* Darker red color on hover */
+    background-color: #333;
   }
 
   &:focus {
     outline: none;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
   }
 
   &:disabled {
-    background-color: #555;
+    background-color: #666;
     cursor: not-allowed;
   }
 `;
@@ -296,11 +340,13 @@ const ErrorMessage = styled.p`
   color: #ff4d4d;
   margin-top: 10px;
   font-size: 14px;
+  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 `;
 
 const UserInfo = styled.div`
   margin-top: 10px;
   color: #fff;
+  font-family: 'Roboto', sans-serif; /* Add a futuristic font family */
 `;
 
 export default AuthComponent;
