@@ -17,7 +17,7 @@ const AuthComponent: React.FC = () => {
 
             await auth.createUserWithEmailAndPassword(email, password);
             // User signed up successfully
-            setErrorMessage('');
+            setErrorMessage('User signed up successfully');
         } catch (error: any) {
             setErrorMessage(error.message);
         }
@@ -27,7 +27,7 @@ const AuthComponent: React.FC = () => {
         try {
             await auth.signInWithEmailAndPassword(email, password);
             // User signed in successfully
-            setErrorMessage('');
+            setErrorMessage('User signed in successfully');
         } catch (error: any) {
             setErrorMessage(error.message);
         }
@@ -37,7 +37,7 @@ const AuthComponent: React.FC = () => {
         try {
             await auth.signOut();
             // User signed out successfully
-            setErrorMessage('');
+            setErrorMessage('User signed out successfully');
         } catch (error: any) {
             setErrorMessage(error.message);
         }
