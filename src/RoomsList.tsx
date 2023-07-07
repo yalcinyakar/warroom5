@@ -3,6 +3,7 @@ import { Typography, Box, Button } from '@mui/material';
 import { styled } from '@mui/system';
 import { firestore } from './firebaseConfig';
 import { Link, useNavigate } from 'react-router-dom';
+import { functions } from './firebaseConfig'; // Import the functions from firebaseConfig
 
 const RoomsContainer = styled('div')`
   display: flex;
@@ -82,9 +83,23 @@ const RoomsList: React.FC = () => {
         fetchRooms();
     }, []);
 
-    const handleJoinRoom = (roomId: string) => {
-        console.log('Joining room:', roomId);
-        navigate(`/rooms/${roomId}`);
+    const handleJoinRoom = async (roomId: string) => {
+        try {
+            console.log('Joining room:', roomId);
+            // Call the joinGameRoom Firebase Cloud Function
+            const joinGameRoomCallable = functions.httpsCallable('joinGameRoom');
+            const response = await joinGameRoomCallable({ roomId: roomId, leaveRoom: false });
+            const success = response.data.success;
+            if (success) {
+                console.log('Joined room:', roomId);
+                // Add your logic here to handle joining the room, such as redirecting the user to the room
+                navigate(`/rooms/${roomId}`);
+            } else {
+                console.error('Failed to join room:', roomId);
+            }
+        } catch (error) {
+            console.error('Error joining room:', error);
+        }
     };
 
     return (

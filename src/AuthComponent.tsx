@@ -3,6 +3,7 @@ import { Typography, Box, Button, InputLabel, Input } from '@mui/material';
 import { styled } from '@mui/system';
 import { auth, database, firestore } from './firebaseConfig';
 import { functions } from './firebaseConfig';
+import { useNavigate } from 'react-router-dom';
 
 const AuthComponent: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ const AuthComponent: React.FC = () => {
     const [showFields, setShowFields] = useState(false);
     const [isSignedUp, setIsSignedUp] = useState(false);
     const [userId, setUserId] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -54,10 +56,16 @@ const AuthComponent: React.FC = () => {
             setErrorMessage('Aramıza hoşgeldin');
             setIsSignedUp(true);
             setUserId(user?.uid || '');
+
             // Call the cloud function to associate the user's nickname with the UID
             const addNicknameCallable = functions.httpsCallable('addNickname');
             const response = await addNicknameCallable({ userId: user?.uid, nickname: nickname });
             console.log('Nickname added:', response.data);
+
+            // Navigate to the root page
+            navigate('/');
+            // Alternatively, you can use the Navigate component
+            // return <Navigate to="/" />;
         } catch (error: any) {
             if (error.code === 'auth/email-already-in-use') {
                 setErrorMessage('Email is already registered');
@@ -68,7 +76,9 @@ const AuthComponent: React.FC = () => {
     };
 
 
+
     const handleSignIn = async () => {
+
         try {
             const userCredential = await auth.signInWithEmailAndPassword(email, password);
             const user = userCredential.user;
@@ -90,6 +100,11 @@ const AuthComponent: React.FC = () => {
                     setUserSignedIn(true);
                     setUserId(user.uid);
                     setNickname(userNickname);
+
+                    // Navigate to the root page
+                    navigate('/');
+                    // Alternatively, you can use the Navigate component
+                    // return <Navigate to="/" />;
                 }
             }
         } catch (error: any) {
@@ -159,27 +174,6 @@ const AuthComponent: React.FC = () => {
             console.error('Error joining room:', error);
         }
     };
-
-    const handleLeaveRoom = async () => {
-        try {
-            const roomId = prompt('Enter the room ID');
-            if (!roomId) return;
-
-            const joinGameRoomCallable = functions.httpsCallable('joinGameRoom');
-            const response = await joinGameRoomCallable({ roomId: roomId, leaveRoom: true }); // Set leaveRoom flag to true when leaving the room
-            const success = response.data.success;
-            if (success) {
-                console.log('Left room:', roomId);
-                // Add your logic here to handle leaving the room
-            } else {
-                console.error('Failed to leave room:', roomId);
-            }
-        } catch (error: any) {
-            console.error('Error leaving room:', error);
-        }
-    };
-
-
     const handleNicknameChange = (e: ChangeEvent<HTMLInputElement>) => {
         setNickname(e.target.value);
     };
@@ -233,7 +227,6 @@ const AuthComponent: React.FC = () => {
                             <>
                                 <Button onClick={handleCreateRoom}>Create Room</Button>
                                 <Button onClick={handleJoinRoom}>Join Room</Button>
-                                <Button onClick={handleLeaveRoom}>Leave Room</Button> {/* Add the Leave Room button */}
                                 <Button onClick={handleSignOut}>Sign Out</Button>
                             </>
                         ) : (
@@ -250,21 +243,13 @@ const AuthComponent: React.FC = () => {
     );
 };
 
-// Styled Components
-
-// ... (the same as in the previous code)
-
-
-
-
-
-
 const Container = styled(Box)`
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 20px;
-  background-color: #111;
+  background-color: #f5f5f5;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 `;
@@ -272,8 +257,7 @@ const Container = styled(Box)`
 const Title = styled(Typography)`
   font-size: 24px;
   margin-bottom: 20px;
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #333;
   font-weight: bold;
 `;
 
@@ -288,19 +272,23 @@ const InputGroup = styled(Box)`
 `;
 
 const StyledInputLabel = styled(InputLabel)`
-  font-size: 14px;
-  margin-bottom: 5px;
-  color: #fff;
-  font-weight: bold;
+  && {
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #555;
+    font-weight: bold;
+  }
 `;
 
 const StyledInput = styled(Input)`
-  padding: 8px;
-  border: none;
-  background-color: #222;
-  color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  && {
+    padding: 8px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #333;
+    border-radius: 4px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  }
 `;
 
 const ButtonGroup = styled(Box)`
@@ -310,22 +298,24 @@ const ButtonGroup = styled(Box)`
 `;
 
 const StyledButton = styled(Button)`
-  padding: 10px 20px;
-  background-color: #ff6f00;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin: 0 10px;
+  && {
+    padding: 10px 20px;
+    background-color: #ff6f00;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 10px;
 
-  &:hover {
-    background-color: #ff8f00;
-  }
+    &:hover {
+      background-color: #ff8f00;
+    }
 
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    }
   }
 `;
 
@@ -336,7 +326,7 @@ const ErrorMessage = styled(Typography)`
 
 const UserInfo = styled(Box)`
   margin-top: 20px;
-  color: #fff;
+  color: #333;
   font-size: 14px;
   font-weight: bold;
 `;
