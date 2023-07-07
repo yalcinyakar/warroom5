@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Box, Button } from '@mui/material';
 import { styled } from '@mui/system';
-import {firestore, functions} from './firebaseConfig';
-import { Link, useNavigate } from 'react-router-dom';
-import firebase from 'firebase/app';
+import {auth, firestore, functions} from './firebaseConfig';
+import { useNavigate } from 'react-router-dom';
+
+import 'firebase/auth';
+import firebase from "firebase/compat/app";
 
 const RoomContainer = styled(Box)`
   display: flex;
@@ -142,9 +144,81 @@ const RoomComponent: React.FC<RoomProps> = ({ roomId }) => {
         }
     }, [room]);
 
-    const handleReadyClick = () => {
-        // Implement your logic here to update the player's readiness status in the Firestore database
+    const handleReadyClick = async () => {
+        try {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                const userId = user.uid;
+                const userRef = firestore.collection('users').doc(userId);
+                const userDoc = await userRef.get();
+                if (userDoc.exists) {
+                    const userNickname = userDoc.data()?.nickname;
+                    if (userNickname) {
+                        const roomRef = firestore.collection('gameRooms').doc(roomId);
+                        await roomRef.update({
+                            players: firebase.firestore.FieldValue.arrayUnion(userId),
+                        });
+                        console.log('Updated readiness status in Firestore.');
+
+                        // Fetch the updated room data from Firestore
+                        const updatedRoomDoc = await roomRef.get();
+                        if (updatedRoomDoc.exists) {
+                            const updatedRoomData = updatedRoomDoc.data();
+                            const updatedPlayers = updatedRoomData?.players || [];
+                            const updatedReadyStatus = updatedPlayers.some((playerId: string) => playerId === userId);
+                            const updatedRoom = {
+                                id: updatedRoomDoc.id,
+                                name: updatedRoomData?.name || '',
+                                players: updatedPlayers,
+                            };
+                            const updatedPlayer = {
+                                id: userId,
+                                name: userNickname,
+                                ready: updatedReadyStatus,
+                            };
+
+                            // Update the local state with the updated room data
+                            setRoom(updatedRoom);
+
+                            if (room && room.players) {
+                                // Find the index of the updated player in the players array
+                                const playerIndex = room.players.findIndex((player: Player) => player.id === userId);
+                                if (playerIndex !== -1) {
+                                    // Update the player in the local state
+                                    const updatedPlayers = [...room.players];
+                                    updatedPlayers[playerIndex] = updatedPlayer;
+                                    setRoom((prevRoom: Room | null) => ({
+                                        ...prevRoom!,
+                                        players: updatedPlayers,
+                                    }));
+                                }
+                            } else {
+                                console.error('Room or players data not found.');
+                            }
+                        } else {
+                            console.error('Updated room document not found.');
+                        }
+                    } else {
+                        console.error('User nickname not found.');
+                    }
+                } else {
+                    console.error('User document not found.');
+                }
+            } else {
+                console.error('User not authenticated.');
+            }
+        } catch (error) {
+            console.error('Error updating readiness status:', error);
+        }
     };
+
+
+
+
+
+
+
+
 
     const handleLeaveRoom = async () => {
         try {
